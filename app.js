@@ -14,7 +14,7 @@ app.use(express.static('public'));
 
 // Endpoint to get the list of available Markdown files
 app.get('/files', (req, res) => {
-  fs.readdir(markdownFolder, (err, files) => {
+  readMarkdownFiles(markdownFolder, (err, files) => {
     if (err) {
       return res.status(500).json({ error: 'Error reading the folder' });
     }
@@ -36,6 +36,29 @@ app.get('/file/:filename', (req, res) => {
     res.send(htmlContent);
   });
 });
+
+function readMarkdownFiles(folderPath, callback) {
+  fs.readdir(folderPath, { withFileTypes: true }, (err, files) => {
+    if (err) {
+      return callback(err);
+    }
+    const fileArray = [];
+
+    files.forEach((file) => {
+      if (file.isDirectory()) {
+        readMarkdownFiles(path.join(folderPath, file.name), (err, subFiles) => {
+          if (!err) {
+            fileArray.push(...subFiles);
+          }
+        });
+      } else if (file.isFile() && file.name.endsWith('.md')) {
+        fileArray.push(path.relative(markdownFolder, path.join(folderPath, file.name)));
+      }
+    });
+
+    callback(null, fileArray);
+  });
+}
 
 // Start the server
 app.listen(PORT, () => {
