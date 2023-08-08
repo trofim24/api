@@ -124,8 +124,8 @@
         });
       });
 
-    function showFileContent(filename) {
-      fetch(`/file/${filename}`)
+    function showFileContent(filepath) {
+      fetch(`/file/${encodeURIComponent(filepath)}`)
         .then((response) => response.text())
         .then((data) => {
           const fileContentElement = document.getElementById('fileContent');
