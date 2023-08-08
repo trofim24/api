@@ -1,66 +1,53 @@
 const express = require('express');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
 const marked = require('marked');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Define the folder containing your Markdown files
 const markdownFolder = path.join(__dirname, 'markdown_files');
 
-// Serve static files (HTML, CSS, JS) from the "public" folder (if you have any)
 app.use(express.static('public'));
 
-// Endpoint to get the list of available Markdown files
-app.get('/files', (req, res) => {
-  readMarkdownFiles(markdownFolder, (err, files) => {
-    if (err) {
-      return res.status(500).json({ error: 'Error reading the folder' });
-    }
+app.get('/files', async (req, res) => {
+  try {
+    const files = await readMarkdownFiles(markdownFolder);
     res.json({ files });
-  });
+  } catch (err) {
+    res.status(500).json({ error: 'Error reading the folder' });
+  }
 });
 
-// Endpoint to read and convert the selected Markdown file to HTML
-app.get('/file/:filename', (req, res) => {
-  const filename = req.params.filename;
-  const filePath = path.join(markdownFolder, filename);
+app.get('/file/:filepath', async (req, res) => {
+  const filepath = req.params.filepath;
+  const filePath = path.join(markdownFolder, filepath);
 
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(404).send('File not found');
-    }
-	console.log(marked);
-    const htmlContent = marked.parse(data);
+  try {
+    const data = await fs.readFile(filePath, 'utf8');
+    const htmlContent = await marked.parse(data);
     res.send(htmlContent);
-  });
+  } catch (err) {
+    res.status(404).send('File not found');
+  }
 });
 
-function readMarkdownFiles(folderPath, callback) {
-  fs.readdir(folderPath, { withFileTypes: true }, (err, files) => {
-    if (err) {
-      return callback(err);
+async function readMarkdownFiles(folderPath) {
+  const files = [];
+  const entries = await fs.readdir(folderPath, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const subFiles = await readMarkdownFiles(path.join(folderPath, entry.name));
+      files.push(...subFiles);
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      files.push(path.relative(markdownFolder, path.join(folderPath, entry.name)));
     }
-    const fileArray = [];
+  }
 
-    files.forEach((file) => {
-      if (file.isDirectory()) {
-        readMarkdownFiles(path.join(folderPath, file.name), (err, subFiles) => {
-          if (!err) {
-            fileArray.push(...subFiles);
-          }
-        });
-      } else if (file.isFile() && file.name.endsWith('.md')) {
-        fileArray.push(path.relative(markdownFolder, path.join(folderPath, file.name)));
-      }
-    });
-
-    callback(null, fileArray);
-  });
+  return files;
 }
 
-// Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
