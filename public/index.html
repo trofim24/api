@@ -26,6 +26,13 @@
       overflow: hidden;
     }
 
+    @font-face {
+      font-family: docons;
+      src: url(third-party/fonts/docons.3d25fd3d.woff2)format("woff2");
+      font-weight: 400;
+      font-style: normal
+    }
+
     #leftPane {
       flex: 0 0 30%;
       background-color: #f1f1f1;
@@ -55,22 +62,22 @@
       text-align: center;
     }
 	
-	#rightPane {
+  	#rightPane {
       font-family: 'Open Sans',sans-serif,Arial;
       font-size: 14px;
-	}
-	
-	#rightPane h1 {
-	  color: #ff6f3d;
-	}
-	
-	#rightPane blockquote {
-	  background: #f9f9f9;
+  	}
+  	
+  	#rightPane h1 {
+  	  color: #ff6f3d;
+  	}
+  	
+  	#rightPane blockquote {
+  	  background: #f9f9f9;
       border-left: 10px solid #ccc;
       margin: 1.5em 10px;
       padding: 2px 10px 2px 10px;
       quotes: "\201C""\201D""\2018""\2019";
-	}
+  	}
 	
 	/* Media query for mobile devices */
     @media screen and (max-width: 767px) {
@@ -88,6 +95,54 @@
         padding: 10px;
       }
     }
+
+    /* Additional styles for the hierarchical file list */
+    #fileList ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    #fileList ul ul {
+      padding-left: 1rem; /* Add padding for nested lists */
+    }
+
+    #fileList li {
+      margin: 5px 0;
+    }
+
+    .folder {
+      position: relative;
+    }
+
+    .folder::before {
+      position: absolute;
+      left: -1rem;
+      transform: rotate(90deg);
+
+      content: "\FF34";
+      font-size: .55rem;
+      font-weight: 600;
+    }
+
+    .collapsed .folder::before {
+      transform: rotate(0deg);
+    }
+
+    .docon {
+      font-family: docons;
+      font-size: inherit;
+      speak: none;
+      font-variant: normal;
+      text-transform: none;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      font-style: normal;
+      font-weight: 400;
+      line-height: 16px;
+      display: inline-block;
+    }
+
   </style>
   <link rel="stylesheet" href="third-party/prism/prism.css">
 </head>
@@ -115,12 +170,54 @@
         const fileList = data.files;
         const fileListElement = document.getElementById('fileList');
 
+        const ul = document.createElement('ul');
+        fileListElement.appendChild(ul);
+
         fileList.forEach((file) => {
-          const link = document.createElement('a');
-          link.href = `#${file}`;
-          link.innerText = file;
-          link.onclick = () => showFileContent(file);
-          fileListElement.appendChild(link);
+          const parts = file.split('/');
+          let parentUl = ul;
+
+          parts.forEach((part, index) => {
+            if (!part.endsWith('.md')) {
+              let listItem = parentUl.querySelector(`[data-folder="${part}"]`);
+              if (!listItem) {
+                listItem = document.createElement('li');
+                listItem.dataset.folder = part;
+                listItem.className = "docon collapsed"; // Add collapsed class
+                const folderText = part;
+                listItem.innerHTML = `<span class="folder">${folderText}</span>`;
+
+                // Add the event listener to the folder element
+                listItem.querySelector('.folder').addEventListener('click', () => {
+                  listItem.classList.toggle('collapsed');
+                  const nestedUl = listItem.querySelector('ul');
+                  if (nestedUl) {
+                    nestedUl.style.display = listItem.classList.contains('collapsed') ? 'none' : 'block';
+                  }
+                });
+
+                parentUl.appendChild(listItem);
+              }
+              if (index < parts.length - 1) {
+                let nestedUl = listItem.querySelector('ul');
+                if (!nestedUl) {
+                  nestedUl = document.createElement('ul');
+                  nestedUl.style.display = 'none'; // Set initial display to 'none'
+                  listItem.appendChild(nestedUl);
+                }
+                parentUl = nestedUl;
+              }
+            } else {
+              const li = document.createElement('li');
+              parentUl.appendChild(li);
+
+              const link = document.createElement('a');
+              link.href = `#${file}`;
+              link.innerText = parts[index];
+              link.onclick = () => showFileContent(file);
+              li.appendChild(link);
+            }
+          });
         });
       });
 
