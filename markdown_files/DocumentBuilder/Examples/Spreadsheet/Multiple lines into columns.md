@@ -1,6 +1,6 @@
 # Split cell with multiple lines into columns
 
-The following example shows how to split cell with multiple lines into columns by using the ["GetValue"](https://api.onlyoffice.com/docbuilder/spreadsheetapi/apirange/getvalue) and ["SetValue"](https://api.onlyoffice.com/docbuilder/spreadsheetapi/apirange/setvalue) methods of the ["ApiRange"](https://api.onlyoffice.com/docbuilder/spreadsheetapi/apirange) class.
+The following example shows how to split cell with multiple lines into columns by using the [GetValue](https://api.onlyoffice.com/docbuilder/spreadsheetapi/apirange/getvalue) and [SetValue](https://api.onlyoffice.com/docbuilder/spreadsheetapi/apirange/setvalue) methods of the [ApiRange](https://api.onlyoffice.com/docbuilder/spreadsheetapi/apirange) class.
 
 ## Executing from a browser (for plugins and macros)
 
@@ -10,7 +10,7 @@ The following example shows how to split cell with multiple lines into columns b
    ```javascript
     let ws = Api.GetActiveSheet();
     // cell with such data
-    let cell = ws.GetRange("A1");
+    let cell = ws.GetRange('A1');
     // set value into the cell for example
     cell.SetValue('123\n456\n789');
     let value = cell.GetValue();
