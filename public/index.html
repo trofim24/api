@@ -205,18 +205,42 @@
   </footer>
 
   <script>
+    const fileListElement = document.getElementById('fileList');
+    const ul = document.createElement('ul');
+    fileListElement.appendChild(ul);
+
+    const getHash = () => {
+      return decodeURIComponent(window.location.hash.substring(1)); // Decode the hash value
+    };
+
+    const scrollToHash = () => {
+      const hash = getHash();
+      const link = fileListElement.querySelector(`a[href="#${hash}"]`);
+      if (link) {
+        link.click();
+      }
+    };
+
+    const uncollapseParentFolders = (listItem) => {
+      while (listItem && listItem.classList.contains('collapsed')) {
+        listItem.classList.remove('collapsed');
+        const nestedUl = listItem.querySelector('ul');
+        if (nestedUl) {
+          nestedUl.style.display = 'block';
+        }
+        listItem = listItem.parentElement.closest('li[data-folder]');
+      }
+    };
+
     fetch('/files')
       .then((response) => response.json())
       .then((data) => {
         const fileList = data.files;
-        const fileListElement = document.getElementById('fileList');
-
-        const ul = document.createElement('ul');
-        fileListElement.appendChild(ul);
 
         fileList.forEach((file) => {
           const parts = file.split('/');
           let parentUl = ul;
+          let currentListItem = null; // Track the current listItem
 
           parts.forEach((part, index) => {
             if (!part.endsWith('.md')) {
@@ -248,6 +272,7 @@
                 }
                 parentUl = nestedUl;
               }
+              currentListItem = listItem; // Update the current listItem
             } else {
               const li = document.createElement('li');
               parentUl.appendChild(li);
@@ -257,6 +282,13 @@
               link.innerText = parts[index];
               link.onclick = () => showFileContent(file);
               li.appendChild(link);
+            }
+
+            if (currentListItem) {
+              if (getHash() === file) {
+                scrollToHash();
+                uncollapseParentFolders(currentListItem); // Uncollapse parent folders of the selected file
+              }
             }
           });
         });
@@ -271,6 +303,9 @@
           Prism.highlightAll();
         });
     }
+
+    // Listen for hash changes to update the displayed content
+    window.addEventListener('hashchange', scrollToHash);
   </script>
   <script src="third-party/prism/prism.js"></script>
 </body>
