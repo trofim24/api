@@ -282,12 +282,12 @@
               link.innerText = parts[index];
               link.onclick = () => showFileContent(file);
               li.appendChild(link);
-            }
 
-            if (currentListItem) {
               if (getHash() === file) {
                 scrollToHash();
-                uncollapseParentFolders(currentListItem); // Uncollapse parent folders of the selected file
+                if (currentListItem) {
+                  uncollapseParentFolders(currentListItem); // Uncollapse parent folders of the selected file
+                }
               }
             }
           });
