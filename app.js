@@ -3,6 +3,12 @@ const fs = require('fs').promises;
 const path = require('path');
 const marked = require('marked');
 
+// Set options
+marked.use({
+  mangle: false,
+  headerIds: false
+});
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
