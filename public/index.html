@@ -28,7 +28,7 @@
 
     @font-face {
       font-family: docons;
-      src: url(third-party/fonts/docons.3d25fd3d.woff2)format("woff2");
+      src: url(/third-party/fonts/docons.3d25fd3d.woff2)format("woff2");
       font-weight: 400;
       font-style: normal
     }
@@ -185,7 +185,7 @@
     }
 
   </style>
-  <link rel="stylesheet" href="third-party/prism/prism.css">
+  <link rel="stylesheet" href="/third-party/prism/prism.css">
 </head>
 <body>
   <header>
@@ -209,16 +209,8 @@
     const ul = document.createElement('ul');
     fileListElement.appendChild(ul);
 
-    const getHash = () => {
-      return decodeURIComponent(window.location.hash.substring(1)); // Decode the hash value
-    };
-
-    const scrollToHash = () => {
-      const hash = getHash();
-      const link = fileListElement.querySelector(`a[href="#${hash}"]`);
-      if (link) {
-        link.click();
-      }
+    const toDashLower = (str)  => {
+      return str.replace(/\s+/g, '-').toLowerCase();
     };
 
     const uncollapseParentFolders = (listItem) => {
@@ -232,15 +224,23 @@
       }
     };
 
+    const getCurrentFilePath = () => {
+      const pathname = window.location.pathname;
+      if (pathname.startsWith('/file/') && pathname.endsWith('.md')) {
+        return pathname.slice('/file/'.length);
+      }
+      return null;
+    };
+
     fetch('/files')
       .then((response) => response.json())
       .then((data) => {
         const fileList = data.files;
+        const currentFilePath = getCurrentFilePath();
 
         fileList.forEach((file) => {
           const parts = file.split('/');
           let parentUl = ul;
-          let currentListItem = null; // Track the current listItem
 
           parts.forEach((part, index) => {
             if (!part.endsWith('.md')) {
@@ -272,41 +272,52 @@
                 }
                 parentUl = nestedUl;
               }
-              currentListItem = listItem; // Update the current listItem
             } else {
               const li = document.createElement('li');
               parentUl.appendChild(li);
 
               const link = document.createElement('a');
-              link.href = `#${file}`;
+              link.href = `${file}`;
               link.innerText = parts[index];
-              link.onclick = () => showFileContent(file);
+              link.onclick = (e) => {
+                e.preventDefault();
+                showFileContent(file);
+              };
               li.appendChild(link);
 
-              if (getHash() === file) {
-                scrollToHash();
-                if (currentListItem) {
-                  uncollapseParentFolders(currentListItem); // Uncollapse parent folders of the selected file
-                }
+              if (toDashLower(file) === currentFilePath) {
+                uncollapseParentFolders(parentUl.parentElement);
+                showFileContent(currentFilePath);
               }
             }
           });
         });
       });
 
+    function updateFileContent(data) {
+      const fileContentElement = document.getElementById('fileContent');
+      fileContentElement.innerHTML = data;
+      Prism.highlightAll();
+    }
     function showFileContent(filepath) {
-      fetch(`/file/${encodeURIComponent(filepath)}`)
+      const file = toDashLower(filepath);
+      fetch(`/_file/${file}`)
         .then((response) => response.text())
         .then((data) => {
-          const fileContentElement = document.getElementById('fileContent');
-          fileContentElement.innerHTML = data;
-          Prism.highlightAll();
+          updateFileContent(data);
+
+          // Update the URL without reloading the page
+          const newUrl = window.location.origin + `/file/` + file;
+          window.history.pushState({"html": data},"", newUrl);
         });
     }
 
-    // Listen for hash changes to update the displayed content
-    window.addEventListener('hashchange', scrollToHash);
+    window.onpopstate = function (e) {
+      if (e.state) {
+        updateFileContent(e.state.html);
+      }
+    };
   </script>
-  <script src="third-party/prism/prism.js"></script>
+  <script src="/third-party/prism/prism.js"></script>
 </body>
 </html>
