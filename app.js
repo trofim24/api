@@ -25,8 +25,10 @@ app.get('/files', async (req, res) => {
   }
 });
 
-app.get('/file/:filepath', async (req, res) => {
-  const filepath = req.params.filepath;
+app.get('/_file/:filepath(*)', async (req, res) => {
+  console.log(2);
+  const filepath = req.params.filepath.replace(/-/g, ' ');
+  console.log(filepath);
   const filePath = path.join(markdownFolder, filepath);
 
   try {
@@ -35,6 +37,20 @@ app.get('/file/:filepath', async (req, res) => {
     res.send(htmlContent);
   } catch (err) {
     res.status(404).send('File not found');
+  }
+});
+
+// Catch-all route to serve index.html for specific URLs
+app.get('/file/:filepath(*)', (req, res, next) => {
+  console.log(1);
+  // Check if the requested URL matches the desired format (e.g., "url/file/filename.md")
+  const filepath = req.params.filepath;
+  if (filepath.endsWith('.md')) {
+    // Serve the index.html file
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  } else {
+    // Handle other routes
+    next();
   }
 });
 
