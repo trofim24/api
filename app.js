@@ -26,9 +26,7 @@ app.get('/files', async (req, res) => {
 });
 
 app.get('/_file/:filepath(*)', async (req, res) => {
-  console.log(2);
   const filepath = req.params.filepath.replace(/-/g, ' ');
-  console.log(filepath);
   const filePath = path.join(markdownFolder, filepath);
 
   try {
@@ -42,7 +40,6 @@ app.get('/_file/:filepath(*)', async (req, res) => {
 
 // Catch-all route to serve index.html for specific URLs
 app.get('/file/:filepath(*)', (req, res, next) => {
-  console.log(1);
   // Check if the requested URL matches the desired format (e.g., "url/file/filename.md")
   const filepath = req.params.filepath;
   if (filepath.endsWith('.md')) {
