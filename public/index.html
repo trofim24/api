@@ -209,8 +209,11 @@
     const ul = document.createElement('ul');
     fileListElement.appendChild(ul);
 
+    const toDash = (str) => {
+      return str.replace(/\s+/g, '-');
+    };
     const toDashLower = (str)  => {
-      return str.replace(/\s+/g, '-').toLowerCase();
+      return toDash(str).toLowerCase();
     };
 
     const uncollapseParentFolders = (listItem) => {
@@ -287,7 +290,7 @@
 
               if (toDashLower(file) === currentFilePath) {
                 uncollapseParentFolders(parentUl.parentElement);
-                showFileContent(currentFilePath);
+                showFileContent(file);
               }
             }
           });
@@ -300,14 +303,14 @@
       Prism.highlightAll();
     }
     function showFileContent(filepath) {
-      const file = toDashLower(filepath);
+      const file = toDash(filepath);
       fetch(`/_file/${file}`)
         .then((response) => response.text())
         .then((data) => {
           updateFileContent(data);
 
           // Update the URL without reloading the page
-          const newUrl = window.location.origin + `/file/` + file;
+          const newUrl = window.location.origin + `/file/` + file.toLowerCase();
           window.history.pushState({"html": data},"", newUrl);
         });
     }
