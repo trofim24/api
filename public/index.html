@@ -3,8 +3,28 @@
 <head>
   <title>Markdown Viewer</title>
   <style>
-    /* CSS styles as before */
+    :root {
+      --theme-text: #161616;
+      --theme-body-background-medium: #f2f2f2;
+      --theme-text-glow-high-contrast: #171717;
+      --theme-hyperlink: #0065b3;
+      --theme-text-subtle: #505050;
+    }
+
+    html {
+      text-size-adjust: 100%;
+      font-size: 16px;
+      overflow-x: hidden;
+      overflow-y: scroll;
+
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizelegibility;
+      font-family: Segoe UI,SegoeUI,Helvetica Neue,Helvetica,Arial,sans-serif;
+    }
     body {
+      color: var(--theme-text);
+      line-height: 160%;
+
       display: flex;
       flex-direction: column;
       min-height: 100vh;
@@ -26,6 +46,11 @@
       overflow: hidden;
     }
 
+    a {
+      color: var(--theme-hyperlink);
+      text-decoration: none;
+    }
+
     @font-face {
       font-family: docons;
       src: url(/third-party/fonts/docons.3d25fd3d.woff2)format("woff2");
@@ -35,7 +60,6 @@
 
     #leftPane {
       flex: 0 0 30%;
-      background-color: #f1f1f1;
       padding: 20px;
       overflow-y: auto;
     }
@@ -46,9 +70,21 @@
       overflow-y: auto;
     }
 
+    #fileList {
+      font-size: .875rem;
+    }
+
     #fileList a {
+      color: var(--theme-text)!important;
       display: block;
       margin-bottom: 5px;
+      padding-left: 1rem;
+    }
+
+    #fileList a.is-selected {
+      background-color: var(--theme-body-background-medium);
+      font-weight: 600;
+      color: var(--theme-text-glow-high-contrast)!important;
     }
 
     #fileContent {
@@ -61,11 +97,6 @@
       padding: 5px;
       text-align: center;
     }
-	
-  	#rightPane {
-      font-family: 'Open Sans',sans-serif,Arial;
-      font-size: 14px;
-  	}
   	
   	#rightPane h1 {
   	  color: #ff6f3d;
@@ -78,16 +109,23 @@
       padding: 2px 10px 2px 10px;
       quotes: "\201C""\201D""\2018""\2019";
   	}
+
+    @media screen and (min-width: 1088px) {
+      #leftPane {
+        width: 25%;
+        flex: none;
+        overflow-y: auto;
+      }
+    }
 	
-	/* Media query for mobile devices */
+	  /* Media query for mobile devices */
     @media screen and (max-width: 767px) {
       body {
         display: block;
       }
 
       #leftPane {
-        width: 100%;
-        padding: 10px;
+        display: none!important;
       }
 
       #rightPane {
@@ -113,20 +151,9 @@
 
     .folder {
       position: relative;
-    }
-
-    .folder::before {
-      position: absolute;
-      left: -1rem;
-      transform: rotate(90deg);
-
-      content: "\FF34";
-      font-size: .55rem;
-      font-weight: 600;
-    }
-
-    .collapsed .folder::before {
-      transform: rotate(0deg);
+      display: block;
+      cursor: pointer;
+      padding-left: 1rem;
     }
 
     .docon {
@@ -142,6 +169,27 @@
       font-weight: 400;
       line-height: 16px;
       display: inline-block;
+    }
+
+    .tree-expander-indicator {
+      color: var(--theme-text-subtle);
+
+      font-size: .55rem;
+      font-weight: 600;
+      transition: transform .15s ease-in-out;
+      display: inline-block;
+      position: absolute;
+      top: 5px;
+      left: 3px;
+      transform: rotate(0);
+    }
+
+    .tree-expander-indicator::before {
+      content: "\FF34";
+    }
+
+    .collapsed .tree-expander-indicator::before {
+      transform: rotate(0deg);
     }
 
     .builder-code {
@@ -205,6 +253,8 @@
   </footer>
 
   <script>
+    var g_disableHistory = false;
+
     const fileListElement = document.getElementById('fileList');
     const ul = document.createElement('ul');
     fileListElement.appendChild(ul);
@@ -235,6 +285,24 @@
       return null;
     };
 
+    const updateFile = (element) => {
+      // Remove the "is-selected" class
+      const previouslySelectedLink = fileListElement.querySelector('a.is-selected');
+      if (previouslySelectedLink) {
+        previouslySelectedLink.classList.remove('is-selected');
+      }
+
+      // Add the "is-selected" class to the clicked file link
+      element.classList.add('is-selected');
+
+      const filepath = element.getAttribute('href');
+      showFileContent(filepath);
+    };
+    const onClickFile = (event) => {
+      event.preventDefault(); // Prevent the default link behavior
+      updateFile(event.target);
+    };
+
     fetch('/files')
       .then((response) => response.json())
       .then((data) => {
@@ -251,9 +319,9 @@
               if (!listItem) {
                 listItem = document.createElement('li');
                 listItem.dataset.folder = part;
-                listItem.className = "docon collapsed"; // Add collapsed class
+                listItem.className = "collapsed"; // Add collapsed class
                 const folderText = part;
-                listItem.innerHTML = `<span class="folder">${folderText}</span>`;
+                listItem.innerHTML = `<span class="folder"><span class="tree-expander-indicator docon"></span>${folderText}</span>`;
 
                 // Add the event listener to the folder element
                 listItem.querySelector('.folder').addEventListener('click', () => {
@@ -282,15 +350,12 @@
               const link = document.createElement('a');
               link.href = `${file}`;
               link.innerText = parts[index];
-              link.onclick = (e) => {
-                e.preventDefault();
-                showFileContent(file);
-              };
+              link.onclick = onClickFile;
               li.appendChild(link);
 
               if (toDashLower(file) === currentFilePath) {
                 uncollapseParentFolders(parentUl.parentElement);
-                showFileContent(file);
+                updateFile(link);
               }
             }
           });
@@ -302,22 +367,30 @@
       fileContentElement.innerHTML = data;
       Prism.highlightAll();
     }
-    function showFileContent(filepath) {
-      const file = toDash(filepath);
+    function showFileContent(filePath) {
+      const disableHistory = g_disableHistory;
+      const file = toDash(filePath);
       fetch(`/_file/${file}`)
         .then((response) => response.text())
         .then((data) => {
           updateFileContent(data);
 
-          // Update the URL without reloading the page
-          const newUrl = window.location.origin + `/file/` + file.toLowerCase();
-          window.history.pushState({"html": data},"", newUrl);
+          if (!disableHistory) {
+            // Update the URL without reloading the page
+            const newUrl = window.location.origin + `/file/` + file.toLowerCase();
+            window.history.pushState({"filePath": filePath},"", newUrl);
+          }
         });
     }
 
     window.onpopstate = function (e) {
       if (e.state) {
-        updateFileContent(e.state.html);
+        const link = fileListElement.querySelector(`a[href="${e.state.filePath}"]`);
+        if (link) {
+          g_disableHistory = true;
+          updateFile(link);
+          g_disableHistory = false;
+        }
       }
     };
   </script>
