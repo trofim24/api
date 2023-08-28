@@ -5,10 +5,12 @@
   <style>
     :root {
       --theme-text: #161616;
+      --theme-control-border: #757575;
       --theme-body-background-medium: #f2f2f2;
       --theme-text-glow-high-contrast: #171717;
       --theme-hyperlink: #0065b3;
       --theme-text-subtle: #505050;
+      --theme-primary-base: #0078d4;
     }
 
     html {
@@ -17,10 +19,17 @@
       overflow-x: hidden;
       overflow-y: scroll;
 
+      box-sizing: border-box;
+
       -webkit-font-smoothing: antialiased;
       text-rendering: optimizelegibility;
       font-family: Segoe UI,SegoeUI,Helvetica Neue,Helvetica,Arial,sans-serif;
     }
+
+    *, :before, :after {
+      box-sizing: inherit;
+    }
+
     body {
       color: var(--theme-text);
       line-height: 160%;
@@ -192,8 +201,62 @@
       transform: rotate(0deg);
     }
 
+    .docon-filter-settings:before {
+      content: "";
+    }
+
     .builder-code {
       width: 75%;
+    }
+
+    .display-block {
+      display: block!important;
+      position: relative;
+    }
+
+    .icon {
+      justify-content: center;
+      align-items: center;
+      display: inline-flex;
+
+      font-size: .875rem;
+
+      width: 2.25em;
+      height: 2.25em;
+      pointer-events: none;
+      z-index: 4;
+      position: absolute;
+      top: 0;
+    }
+
+    .icon.is-left {
+      inset-inline-start: 0;
+    }
+
+    .input {
+      width: 100%;
+      max-width: 100%;
+      position: relative;
+
+      border: 1px solid var(--theme-control-border);
+      
+      padding-block: calc(0.375em - 1px);
+      line-height: 1.5;
+    }
+
+    .input:focus-visible {
+      border-color: var(--theme-primary-base);
+      outline-offset: 0;
+      box-shadow: 0 0 0 0.125rem var(--theme-primary-base);
+      outline-style: solid;
+      outline-color: #0000;
+    }
+
+    .input.input-sm {
+      font-size: .875rem;
+
+      padding-inline-start: 2.25em;
+      padding-inline-end: 26px
     }
 
     textarea {
@@ -241,8 +304,15 @@
   </header>
   <main>
     <div id="leftPane">
-      <h2>GET STARTED</h2>
-      <div id="fileList"></div>
+      <nav>
+        <div class="display-block">
+          <input role="combobox" class="input input-sm" maxlength="100" aria-autocomplete="list" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" id="ax-60" data-test-id="ax-60" type="text" aria-expanded="false" aria-owns="ax-61-listbox" aria-controls="ax-61-listbox" aria-activedescendant="" aria-describedby="ms--ax-60-description" placeholder="Filter by title" pattern=".*">
+          <span aria-hidden="true" class="icon is-left">
+            <span class="docon docon-filter-settings"></span>
+          </span>
+        </div>
+        <div id="fileList"></div>
+      </nav>
     </div>
     <div id="rightPane">
       <div id="fileContent"></div>
