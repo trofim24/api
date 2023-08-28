@@ -355,11 +355,13 @@
     const toDash = (str) => {
       return str.replace(/\s+/g, '-');
     };
-    const toDashLower = (str)  => {
-      return toDash(str).toLowerCase();
+    const getUrlByFilePath = (filePath) => {
+      return window.location.origin + `/file/` + filePath.toLowerCase();
     };
 
     const uncollapseParentFolders = (listItem) => {
+      listItem = listItem && listItem.parentElement && listItem.parentElement.closest('li[data-folder]')
+
       while (listItem && listItem.classList.contains('collapsed')) {
         listItem.classList.remove('collapsed');
         const nestedUl = listItem.querySelector('ul');
@@ -378,6 +380,17 @@
       return null;
     };
 
+    const updateFileByPath = (filePath) => {
+      if (filePath) {
+        const link = fileListElement.querySelector(`a[href="${filePath}" i]`);
+        if (link) {
+          uncollapseParentFolders(link.parentElement);
+          g_disableHistory = true;
+          updateFile(link);
+          g_disableHistory = false;
+        }
+      }
+    };
     const updateFile = (element) => {
       // Remove the "is-selected" class
       const previouslySelectedLink = fileListElement.querySelector('a.is-selected');
@@ -400,7 +413,6 @@
       .then((response) => response.json())
       .then((data) => {
         const fileList = data.files;
-        const currentFilePath = getCurrentFilePath();
 
         fileList.forEach((file) => {
           const parts = file.split('/');
@@ -437,6 +449,8 @@
                 parentUl = nestedUl;
               }
             } else {
+              file = toDash(file);
+
               const li = document.createElement('li');
               parentUl.appendChild(li);
 
@@ -445,14 +459,16 @@
               link.innerText = parts[index];
               link.onclick = onClickFile;
               li.appendChild(link);
-
-              if (toDashLower(file) === currentFilePath) {
-                uncollapseParentFolders(parentUl.parentElement);
-                updateFile(link);
-              }
             }
           });
         });
+
+        let filePath = getCurrentFilePath();
+        if (!filePath && fileList) {
+          filePath = toDash(fileList[0]);
+          history.replaceState({"filePath": filePath}, "", getUrlByFilePath(filePath));
+        }
+        updateFileByPath(filePath);
       });
 
     function updateFileContent(data) {
@@ -462,28 +478,21 @@
     }
     function showFileContent(filePath) {
       const disableHistory = g_disableHistory;
-      const file = toDash(filePath);
-      fetch(`/_file/${file}`)
+      fetch(`/_file/${filePath}`)
         .then((response) => response.text())
         .then((data) => {
           updateFileContent(data);
 
           if (!disableHistory) {
             // Update the URL without reloading the page
-            const newUrl = window.location.origin + `/file/` + file.toLowerCase();
-            window.history.pushState({"filePath": filePath},"", newUrl);
+            window.history.pushState({"filePath": filePath}, "", getUrlByFilePath(filePath));
           }
         });
     }
 
     window.onpopstate = function (e) {
       if (e.state) {
-        const link = fileListElement.querySelector(`a[href="${e.state.filePath}"]`);
-        if (link) {
-          g_disableHistory = true;
-          updateFile(link);
-          g_disableHistory = false;
-        }
+        updateFileByPath(e.state.filePath);
       }
     };
   </script>
