@@ -5,12 +5,18 @@
   <style>
     :root {
       --theme-text: #161616;
+      --theme-text-subtle: #505050;
+      --theme-text-glow-high-contrast: #171717;
+      
       --theme-control-border: #757575;
       --theme-body-background-medium: #f2f2f2;
-      --theme-text-glow-high-contrast: #171717;
       --theme-hyperlink: #0065b3;
-      --theme-text-subtle: #505050;
       --theme-primary-base: #0078d4;
+      
+      --theme-box-shadow-light: #0000001c;
+      --theme-box-shadow-medium: #00000021;
+
+      --theme-border: #e6e6e6;
     }
 
     html {
@@ -86,7 +92,8 @@
     #fileList a {
       color: var(--theme-text)!important;
       display: block;
-      margin-bottom: 5px;
+      padding-top: 2px;
+      padding-bottom: 2px;
       padding-left: 1rem;
     }
 
@@ -259,6 +266,21 @@
       padding-inline-end: 26px
     }
 
+    .autocomplete-suggestions {
+      z-index: 1000;
+      max-height: 18rem;
+      min-width: 100%;
+      max-width: 100%;
+      cursor: default;
+      background-color: var(--theme-body-background);
+      box-shadow: 0 1.6px 3.6px 0 var(--theme-box-shadow-medium),0 .3px .9px 0 var(--theme-box-shadow-light);
+      list-style-type: none;
+      position: absolute;
+      border: 1px solid var(--theme-border);
+      padding: 0px;
+      margin: 2px 0px 0px !important;
+    }
+
     textarea {
         background: #f4f4f4;
         border: 1px solid #bfbfbf;
@@ -310,6 +332,7 @@
           <span aria-hidden="true" class="icon is-left">
             <span class="docon docon-filter-settings"></span>
           </span>
+          <ul id="filterList" class="autocomplete-suggestions" hidden></ul>
         </div>
         <div id="fileList"></div>
       </nav>
