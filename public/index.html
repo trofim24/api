@@ -79,7 +79,6 @@
     #leftPane {
       flex: 0 0 30%;
       padding: 20px;
-      overflow-y: auto;
     }
 
     #rightPane {
@@ -128,30 +127,6 @@
       padding: 2px 10px 2px 10px;
       quotes: "\201C""\201D""\2018""\2019";
   	}
-
-    @media screen and (min-width: 1088px) {
-      #leftPane {
-        width: 25%;
-        flex: none;
-        overflow-y: auto;
-      }
-    }
-	
-	  /* Media query for mobile devices */
-    @media screen and (max-width: 767px) {
-      body {
-        display: block;
-      }
-
-      #leftPane {
-        display: none!important;
-      }
-
-      #rightPane {
-        width: 100%;
-        padding: 10px;
-      }
-    }
 
     /* Additional styles for the hierarchical file list */
     #fileList ul {
@@ -221,6 +196,12 @@
       overflow: hidden;
     }
 
+    .control {
+      text-align: left;
+      font-size: 1rem;
+      position: relative;
+    }
+
     .docon-chevron-right-light::before {
       content: "Ｔ";
     }
@@ -287,6 +268,22 @@
       padding-inline-end: 26px
     }
 
+    .is-vertically-scrollable {
+      -webkit-overflow-scrolling: touch;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    .padding-xxs {
+      padding: 0.5rem!important;
+    }
+    .padding-inline-xxs {
+      padding-inline: 0.5rem!important;
+    }
+
+    .font-size-sm {
+      font-size: .875rem!important;
+    }
+
     .autocomplete-suggestions {
       z-index: 1000;
       max-height: 18rem;
@@ -304,6 +301,43 @@
     .autocomplete-suggestion {
       display: block;
       padding: 2px 0px;
+    }
+    .autocomplete-suggestion:hover, .autocomplete-suggestion.is-active-descendant {
+      background-color: var(--theme-body-background-medium);
+      outline-offset: -0.125rem;
+      outline-color: currentcolor !important;
+
+      outline-width: 0.125rem;
+      outline-style: dashed;
+    }
+
+    @media screen and (min-width: 1088px) {
+      #leftPane {
+        width: 25%;
+        flex: none;
+      }
+    }
+  
+    /* Media query for mobile devices */
+    @media screen and (max-width: 767px) {
+      body {
+        display: block;
+      }
+
+      #leftPane {
+        display: none!important;
+      }
+
+      #rightPane {
+        width: 100%;
+        padding: 10px;
+      }
+    }
+
+    @media screen and (min-width: 768px) {
+      .autocomplete-suggestions {
+        max-width: 500px;
+      }
     }
 
     textarea {
@@ -353,11 +387,13 @@
     <div id="leftPane">
       <nav>
         <div class="display-block">
-          <input role="combobox" class="input input-sm" maxlength="100" aria-autocomplete="list" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" id="ax-60" data-test-id="ax-60" type="text" aria-expanded="false" aria-owns="ax-61-listbox" aria-controls="ax-61-listbox" aria-activedescendant="" aria-describedby="ms--ax-60-description" placeholder="Filter by title" pattern=".*">
-          <span aria-hidden="true" class="icon is-left">
-            <span class="docon docon-filter-settings"></span>
-          </span>
-          <ul id="filterList" class="autocomplete-suggestions" hidden></ul>
+          <div class="control">
+            <input role="combobox" class="input input-sm" maxlength="100" aria-autocomplete="list" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" id="inputFindByTitle" type="text" aria-expanded="false" aria-owns="ax-61-listbox" aria-controls="ax-61-listbox" aria-activedescendant="" aria-describedby="ms--ax-60-description" placeholder="Filter by title" pattern=".*">
+            <span aria-hidden="true" class="icon is-left">
+              <span class="docon docon-filter-settings"></span>
+            </span>
+          </div>
+          <ul id="filterList" class="autocomplete-suggestions padding-xxs is-vertically-scrollable" hidden></ul>
         </div>
         <div id="fileList"></div>
       </nav>
@@ -371,7 +407,9 @@
   </footer>
 
   <script>
-    var g_disableHistory = false;
+    let g_disableHistory = false;
+    let g_fileList = [];
+    let g_filesParts = [];
 
     const fileListElement = document.getElementById('fileList');
     const ul = document.createElement('ul');
@@ -433,15 +471,21 @@
       event.preventDefault(); // Prevent the default link behavior
       updateFile(event.target);
     };
+    const onClickFileSearch = (event) => {
+      updateFileByPath(toDash(event.currentTarget.getAttribute("filePath")));
+      inputFindByTitleElement.blur();
+    };
 
     fetch('/files')
       .then((response) => response.json())
       .then((data) => {
-        const fileList = data.files;
+        g_fileList = data.files;
 
-        fileList.forEach((file) => {
+        g_fileList.forEach((file) => {
           const parts = file.split('/');
           let parentUl = ul;
+
+          g_filesParts.push(parts);
 
           parts.forEach((part, index) => {
             if (!part.endsWith('.md')) {
@@ -520,6 +564,64 @@
         updateFileByPath(e.state.filePath);
       }
     };
+
+    const filterList = document.getElementById('filterList');
+    const inputFindByTitleElement = document.getElementById('inputFindByTitle');
+
+    filterList.onmousedown = function () {
+      return false;
+    };
+    inputFindByTitleElement.addEventListener("focus", (event) => {
+      if (filterList.innerHTML) {
+        filterList.removeAttribute("hidden");
+      }
+    });
+    inputFindByTitleElement.addEventListener("blur", (event) => {
+      filterList.setAttribute("hidden", "");
+    });
+    inputFindByTitleElement.addEventListener("input", (event) => {
+      const val = event.target.value;
+
+      filterList.innerHTML = "";
+      if (!val) {
+        filterList.setAttribute("hidden", "");
+        return;
+      }
+
+      g_filesParts.forEach((part, index) => {
+        const length = part.length;
+        const fileName = part[length-1];
+        if (!fileName.toLowerCase().includes(val.toLowerCase())) {
+          return;
+        }
+
+        const li = document.createElement('li');
+        li.className = "autocomplete-suggestion";
+        li.setAttribute("aria-selected", "false");
+        li.setAttribute("filePath", g_fileList[index]);
+        li.onclick = onClickFileSearch;
+        filterList.appendChild(li);
+
+        const span1 = document.createElement('span');
+        span1.className = "display-block font-size-sm padding-inline-xxs";
+        li.appendChild(span1);
+
+        const span2 = document.createElement('span');
+        span2.className = "has-overflow-ellipsis-tablet display-block";
+        span2.innerText = fileName;
+        span1.appendChild(span2);
+
+        const span3 = document.createElement('span');
+        span3.className = "display-block has-text-subtle has-overflow-ellipsis font-size-xs has-line-height-reset padding-bottom-xxs";
+        const delimeter = "<span aria-hidden='true' class='docon docon-chevron-right-light padding-inline-xxs' style='font-size: .55rem;'></span>";
+        span3.innerHTML = (1 === length) ? "" : part.slice(0, -1).join(delimeter);
+        span1.appendChild(span3);
+      });
+
+      if (filterList.innerHTML) {
+        filterList.removeAttribute("hidden");
+      }
+    });
   </script>
   <script src="/third-party/prism/prism.js"></script>
 </body>
