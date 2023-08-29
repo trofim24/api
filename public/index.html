@@ -69,10 +69,14 @@
       text-decoration: none;
     }
 
-    #fileContent pre[class*=language-] {
-      direction: ltr;
+    #fileContent pre[class*=language-],
+    #fileContent code[class*=language-] {
       font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,Courier,monospace;
       font-size: .875rem;
+    }
+
+    #fileContent pre[class*=language-] {
+      direction: ltr;
 
       padding: 1rem;
       border: 0.125rem solid var(--theme-border);
