@@ -381,7 +381,7 @@
 </head>
 <body>
   <header>
-    <h1>Markdown Viewer</h1>
+    <h1>API Markdown Viewer</h1>
   </header>
   <main>
     <div id="leftPane">
@@ -408,7 +408,7 @@
 
   <script>
     let g_disableHistory = false;
-    let g_fileList = [];
+    let g_fileList;
     let g_filesParts = [];
 
     const fileListElement = document.getElementById('fileList');
@@ -533,8 +533,8 @@
         });
 
         let filePath = getCurrentFilePath();
-        if (!filePath && fileList) {
-          filePath = toDash(fileList[0]);
+        if (!filePath && g_fileList) {
+          filePath = toDash(g_fileList[0]);
           history.replaceState({"filePath": filePath}, "", getUrlByFilePath(filePath));
         }
         updateFileByPath(filePath);
