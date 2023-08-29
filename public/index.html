@@ -69,6 +69,14 @@
       text-decoration: none;
     }
 
+    #navLeftPane {
+      max-height: calc(100vh - 48px);
+      position: sticky!important;
+      flex-direction: column!important;
+      display: flex!important;
+      overflow-y: scroll;
+    }
+
     #fileContent pre[class*=language-],
     #fileContent code[class*=language-] {
       font-family: SFMono-Regular,Consolas,Liberation Mono,Menlo,Courier,monospace;
@@ -398,7 +406,7 @@
   </header>
   <main>
     <div id="leftPane">
-      <nav>
+      <nav id="navLeftPane">
         <div class="display-block">
           <div class="control">
             <input role="combobox" class="input input-sm" maxlength="100" aria-autocomplete="list" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" id="inputFindByTitle" type="text" aria-expanded="false" aria-owns="ax-61-listbox" aria-controls="ax-61-listbox" aria-activedescendant="" aria-describedby="ms--ax-60-description" placeholder="Filter by title" pattern=".*">
@@ -408,7 +416,7 @@
           </div>
           <ul id="filterList" class="autocomplete-suggestions padding-xxs is-vertically-scrollable" hidden></ul>
         </div>
-        <div id="fileList"></div>
+        <div id="fileList" class="is-vertically-scrollable"></div>
       </nav>
     </div>
     <div id="rightPane">
